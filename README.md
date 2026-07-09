@@ -17,10 +17,31 @@ such as running commands, machines, jobs, ports, or generated data. A teammate c
 open a fresh agent, run `start`, choose the continuation, and keep working without
 reconstructing the previous session from chat history.
 
-The architecture side is formal on purpose: the bundled `FRAMEWORK.md` models the
-project as data (`Dat`), transformations (`Trn`), locations (`Loc`), and
-transmissions (`Trm`). That gives the team shared rules for planning, reviewing,
-and reconciling the system so implementation and docs do not drift.
+The architecture side is formal on purpose. The bundled `FRAMEWORK.md` is the
+root method: it models the project as data (`Dat`), transformations (`Trn`),
+locations (`Loc`), and transmissions (`Trm`). Every proposed component, feature,
+boundary, and field has to land in that model and then map to real code via
+`file:symbol`. If it cannot be grounded that way, it is not accepted as fact - it
+becomes an open question, a planned item, or is discarded.
+
+That is the point of using category theory here: it keeps the AI from drifting
+into imagined architecture. The agent is forced to ask "what object is this?",
+"what morphism changes it?", "where does it run?", "what carries it across a
+boundary?", and "which real code realizes it?" The result is a formalized,
+grounded way to engineer the system, not just prettier documentation.
+
+How the formal basis works in practice:
+
+1. **Name the real objects.** Data, states, files, API payloads, queues, and
+   persisted records become `Dat`.
+2. **Name the real arrows.** Functions, jobs, transitions, validators, renders,
+   imports, and exports become `Trn`/morphisms.
+3. **Name the real placement.** Processes, browsers, servers, workers, databases,
+   and queues become `Loc`; cross-boundary carriers become `Trm`.
+4. **Map model to code.** Every object and morphism gets a `file:symbol` in
+   `IMPLEMENTATION.md`, or is marked planned/open.
+5. **Check laws before accepting structure.** Coherence failures become bugs,
+   explicit exceptions, or open work - not hand-waved prose.
 
 The skill creates and maintains a `docs/` knowledge base:
 
@@ -72,7 +93,11 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-  Model["ARCHITECTURE.md<br/>intended model"] --> Impl["IMPLEMENTATION.md<br/>model to file:symbol map"]
+  Request["user request or agent idea"] --> Framework["FRAMEWORK.md<br/>Dat / Trn / Loc / Trm"]
+  Framework --> Grounded{"grounded in repo<br/>or explicit plan?"}
+  Grounded -->|"yes"| Model["ARCHITECTURE.md<br/>intended model"]
+  Grounded -->|"no"| Question["open question / discard<br/>do not invent"]
+  Model --> Impl["IMPLEMENTATION.md<br/>model to file:symbol map"]
   Impl --> Status["STATUS.md<br/>built / partial / unbuilt"]
   Status --> Session["sessions/*.md<br/>what happened + what remains"]
   Session --> StartAgain["next start<br/>recover context"]

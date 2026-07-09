@@ -4,11 +4,14 @@ description: >
   Standardize AI/team work sessions for any software project: start every session
   from shared docs and recent immutable session logs, end every session by recording
   decisions, open items, live execution state, and a resumable handoff, then reconcile
-  docs with code. Also model the project architecture as a category using FRAMEWORK.md
-  (Dat/Trn/Loc/Trm) to prevent drift. Use when the user runs /category-architect
-  init/start/end/suggest, asks to continue prior work, hand off a session, recover
-  context, map or document architecture, plan/implement with a design-first flow,
-  reconcile docs with code, or generate formal improvement suggestions.
+  docs with code. Use FRAMEWORK.md (Dat/Trn/Loc/Trm) as the formal root method:
+  every proposed component, feature, boundary, and field must be grounded as
+  objects/morphisms/locations/transmissions and mapped to real or explicitly planned
+  code, preventing AI-invented architecture. Use when the user runs
+  /category-architect init/start/end/suggest, asks to continue prior work, hand off
+  a session, recover context, map or document architecture, plan/implement with a
+  design-first flow, reconcile docs with code, or generate formal improvement
+  suggestions.
 ---
 
 # Category Architect
@@ -25,10 +28,14 @@ discipline**. Its daily contract is simple:
 resume/inspect commands, and reconciled docs. Another agent should be able to run
 `start`, choose the open continuation, and proceed without chat history.
 
-The formal method is defined by [`FRAMEWORK.md`](FRAMEWORK.md): a running system
+The formal root method is [`FRAMEWORK.md`](FRAMEWORK.md): a running system
 holds/transforms data (`Dat`, `Trn`) and transmits it between sites (`Loc`, `Trm`);
 "good architecture" becomes something you *check* with the §4.5 coherence laws,
-not argue about.
+not argue about. Category theory is the guardrail: every proposed component,
+feature, boundary, field, or "system shape" must be expressed as objects,
+morphisms, locations, and transmissions, then mapped to real code or an explicit
+plan. If it cannot be grounded, do not invent it; record it as an open question,
+a planned item, or discard it.
 
 This skill turns that method into a repeatable workflow: a **fixed `docs/` tree**,
 document types written from the framework, and session protocols that keep people,
@@ -38,6 +45,19 @@ agents, docs, and code aligned.
 > the base of everything here. Every diagram, table, and review in this skill cites
 > a FRAMEWORK section (§n). When code and a doc disagree, the doc states *intent*
 > and one of them has a bug (FRAMEWORK §2, §6).
+
+**Grounding rule.** Never let the agent create free-floating architecture prose.
+For each claim, name the `Dat`, `Trn`, `Loc`, or `Trm`; cite the relevant
+FRAMEWORK rule; and map it to `file:symbol` in IMPLEMENTATION.md when built. Claims
+without a model location and code/planned realization stay out of the architecture.
+
+Operationally:
+
+1. Data/states/files/API payloads/records -> `Dat`.
+2. Functions/jobs/transitions/validators/renders/imports/exports -> `Trn`.
+3. Processes/browsers/servers/workers/databases/queues -> `Loc`; cross-boundary
+   carriers -> `Trm`.
+4. Every accepted model row maps to `file:symbol`, `planned`, or `open question`.
 
 ---
 
@@ -170,19 +190,23 @@ The essence:
 1. **Start and end every session.** `start` restores the shared state; `end` makes
    the next `start` reliable. Never leave open work, live machines, running jobs,
    generated data, or blocked commands only in chat.
-2. **Model before code (§6.1).** New feature ⟹ a `plan` with the categorical model
+2. **No imagined architecture.** A component, feature, field, boundary, or service
+   is not real because it sounds plausible. It must be grounded in `Dat`/`Trn`/
+   `Loc`/`Trm` and mapped to real code or an explicit plan; otherwise record it as
+   an open question or discard it.
+3. **Model before code (§6.1).** New feature ⟹ a `plan` with the categorical model
    comes first. No component gets code before it has an ARCHITECTURE.md section.
-3. **Reconcile in the same change (§6.3).** A new field is a new morphism: update
+4. **Reconcile in the same change (§6.3).** A new field is a new morphism: update
    the morphism table and IMPLEMENTATION.md *with* the code, not after. Implementing
    can change the design — feed reality back into the docs at the end of every build.
-4. **Deduce, don't redescribe (§4.3, §5).** Roll-up docs (`docs/STATUS.md`,
+5. **Deduce, don't redescribe (§4.3, §5).** Roll-up docs (`docs/STATUS.md`,
    `docs/suggestions.md`, `architecture-map.md`'s component views) are *deduced*
    from the per-component files — summarise and point, never fork the content.
-5. **The doc is the spec (§6.6).** Code violating a composition rule ⟹ fix the code
+6. **The doc is the spec (§6.6).** Code violating a composition rule ⟹ fix the code
    or add an explicit `Note:` exception to the rule. Undocumented exceptions rot.
-6. **Immutable sessions.** Never edit a past `sessions/*.md`. New findings ⟹ new log
+7. **Immutable sessions.** Never edit a past `sessions/*.md`. New findings ⟹ new log
    + reconcile the *living* docs (STATUS, ARCHITECTURE).
-7. **Run the §4.5 checklist before merging** any non-trivial change (FRAMEWORK §8).
+8. **Run the §4.5 checklist before merging** any non-trivial change (FRAMEWORK §8).
 
 ---
 
