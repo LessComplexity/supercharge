@@ -1,28 +1,38 @@
 ---
 name: category-architect
 description: >
-  Model, document, and build ANY software project as a category, using the bundled
-  FRAMEWORK.md (Dat/Trn/Loc/Trm + category theory) as the single source of method.
-  Establishes and maintains a docs/ knowledge base — a whole-system architecture-map,
-  per-component ARCHITECTURE / IMPLEMENTATION / STATUS / suggestions docs, plans,
-  reviews, and immutable session logs — and keeps every doc reconciled with the code.
-  Use when the user runs /category-architect, or asks to: map or document a project's
-  architecture, create an architecture map, categorically model a system or feature,
-  start or close out a work session against the docs, plan or implement a feature with
-  a design-first flow, reconcile docs with code, or generate improvement suggestions.
+  Standardize AI/team work sessions for any software project: start every session
+  from shared docs and recent immutable session logs, end every session by recording
+  decisions, open items, live execution state, and a resumable handoff, then reconcile
+  docs with code. Also model the project architecture as a category using FRAMEWORK.md
+  (Dat/Trn/Loc/Trm) to prevent drift. Use when the user runs /category-architect
+  init/start/end/suggest, asks to continue prior work, hand off a session, recover
+  context, map or document architecture, plan/implement with a design-first flow,
+  reconcile docs with code, or generate formal improvement suggestions.
 ---
 
 # Category Architect
 
-A project-agnostic operating system for **designing, documenting, and building**
-software as a **category**. The method is defined entirely by the bundled
-[`FRAMEWORK.md`](FRAMEWORK.md) — a running system holds/transforms data (`Dat`,
-`Trn`) and transmits it between sites (`Loc`, `Trm`); "good architecture" becomes
-something you *check* with the §4.5 coherence laws, not argue about.
+A project-agnostic operating system for **team continuity and architecture
+discipline**. Its daily contract is simple:
 
-This skill turns that framework into a repeatable workflow: a **fixed `docs/`
-tree**, a set of **document types** each written from the framework, and **modes**
-that keep the tree honest across sessions and agents.
+1. Run `start` at the beginning of every session.
+2. Do the work against the shared model.
+3. Run `end` before stopping.
+
+`start` restores context from the repo's shared docs and latest session logs.
+`end` writes the next handoff: decisions, open items, live execution state, exact
+resume/inspect commands, and reconciled docs. Another agent should be able to run
+`start`, choose the open continuation, and proceed without chat history.
+
+The formal method is defined by [`FRAMEWORK.md`](FRAMEWORK.md): a running system
+holds/transforms data (`Dat`, `Trn`) and transmits it between sites (`Loc`, `Trm`);
+"good architecture" becomes something you *check* with the §4.5 coherence laws,
+not argue about.
+
+This skill turns that method into a repeatable workflow: a **fixed `docs/` tree**,
+document types written from the framework, and session protocols that keep people,
+agents, docs, and code aligned.
 
 > **Read `FRAMEWORK.md` first, once per session, before authoring any doc.** It is
 > the base of everything here. Every diagram, table, and review in this skill cites
@@ -44,7 +54,8 @@ docs/
 ├── STATUS.md                # roll-up of every <component>/STATUS.md, one row per component
 ├── suggestions.md           # roll-up of every <component>/suggestions.md, CT-driven
 ├── sessions/
-│   └── YYYY-MM-DD-<slug>.md  # immutable per-session logs (never edited after write)
+│   └── YYYY-MM-DD-<slug>.md  # immutable handoff logs: decisions, open items,
+│                             #   live state, exact resume commands.
 └── <component>/             # one folder per component / feature / part of the system
     ├── ARCHITECTURE.md       # the categorical model of this component (FRAMEWORK §2 + §4)
     ├── IMPLEMENTATION.md     # functor: each object/morphism → real file:symbol
@@ -68,6 +79,10 @@ smaller copy of the same layout.
 
 ## Modes — route on the user's request
 
+Normal use is `init` once, then `start` at the top of every session and `end` at
+the bottom of every session. Treat a bare "continue" after `start` as "continue
+the latest open item unless the user chooses another one."
+
 Some modes are named commands; the rest are **behaviors the skill applies
 automatically** whenever it is active. You do not need a command to plan or build —
 if the skill is active and the user asks to develop something, follow the build flow.
@@ -79,8 +94,8 @@ obvious one and say so.
 | Mode | Trigger | What it does | Playbook |
 | --- | --- | --- | --- |
 | **init** | `init`, or the tree is absent | Read the system → write `architecture-map.md` → create a folder + 4 docs per component → reconcile up into `STATUS.md` + `suggestions.md`. | [`references/init.md`](references/init.md) |
-| **start** | `start`, or opening a fresh session | Read `sessions/` (latest first) + `docs/STATUS.md`; from the user's query pick the relevant session(s) and component `STATUS.md`(s); drill into that component's docs. Orient, then act. | [`references/sessions.md`](references/sessions.md) |
-| **reconcile / end** | `reconcile`, `end`, session close | Write the session log, then reconcile every affected doc bottom-up: IMPLEMENTATION → ARCHITECTURE → component STATUS → `docs/IMPLEMENTATION.md` → `docs/STATUS.md`; refresh `architecture-map.md` if components/atoms changed. | [`references/sessions.md`](references/sessions.md) |
+| **start** | `start`, opening a fresh session, or "continue" | Read `sessions/` latest first + `docs/STATUS.md`; surface continuable open items; if the user chooses/continues one, read its component docs and resume from its recorded next command/check. | [`references/sessions.md`](references/sessions.md) |
+| **reconcile / end** | `reconcile`, `end`, session close | Snapshot decisions, open items, live commands/jobs/machines/artifacts, reconcile affected docs bottom-up, then write the immutable handoff log with exact resume/inspect commands. | [`references/sessions.md`](references/sessions.md) |
 | **suggest** | `suggest` | Apply category-theory rules (§3 Consolidation, §4.5 laws, §5 principles) to each ARCHITECTURE.md → write per-component `suggestions.md` → roll up into `docs/suggestions.md`. | [`references/status-suggestions.md`](references/status-suggestions.md) |
 
 **Automatic behavior — the build flow (no command needed).** Whenever the skill is
@@ -94,10 +109,9 @@ without being told to, in order (full playbook: [`references/build.md`](referenc
 2. **Implement.** Code → write & run tests (edge cases, at volume via subagents) →
    fix until green → **reconcile the docs** with what the code actually became.
 
-A substantive request therefore chains: *(start) → plan → implement → end*. The
-plan gate and the closing reconcile are not optional steps the user must invoke —
-they are how the skill behaves. Do not skip the reconcile at the end of any work
-that changed code.
+A substantive request therefore chains: `start` -> plan -> implement -> `end`. The
+plan gate and closing handoff/reconcile are not optional. Do not end a work session
+with unrecorded open items, untracked live state, or unreconciled docs.
 
 ---
 
@@ -142,28 +156,33 @@ The essence:
   fixes, deduce-don't-store wins), never taste. Each references the rule it
   applies. See [`references/status-suggestions.md`](references/status-suggestions.md).
 
-- **`sessions/YYYY-MM-DD-<slug>.md`** — an immutable, self-contained log: enough
-  that any other agent reads it and continues as if it ran the session. Decisions
-  made / kept / discarded, benchmarks, comparisons, tests, open ends.
+- **`sessions/YYYY-MM-DD-<slug>.md`** — an immutable, self-contained handoff log:
+  enough that any other agent reads it and continues as if it ran the session.
+  Include decisions made / kept / discarded, benchmarks, comparisons, tests, open
+  ends, live commands/jobs/machines/ports/artifacts, and exact resume/inspect
+  commands.
   See [`references/sessions.md`](references/sessions.md).
 
 ---
 
 ## Non-negotiable disciplines
 
-1. **Model before code (§6.1).** New feature ⟹ a `plan` with the categorical model
+1. **Start and end every session.** `start` restores the shared state; `end` makes
+   the next `start` reliable. Never leave open work, live machines, running jobs,
+   generated data, or blocked commands only in chat.
+2. **Model before code (§6.1).** New feature ⟹ a `plan` with the categorical model
    comes first. No component gets code before it has an ARCHITECTURE.md section.
-2. **Reconcile in the same change (§6.3).** A new field is a new morphism: update
+3. **Reconcile in the same change (§6.3).** A new field is a new morphism: update
    the morphism table and IMPLEMENTATION.md *with* the code, not after. Implementing
    can change the design — feed reality back into the docs at the end of every build.
-3. **Deduce, don't redescribe (§4.3, §5).** Roll-up docs (`docs/STATUS.md`,
+4. **Deduce, don't redescribe (§4.3, §5).** Roll-up docs (`docs/STATUS.md`,
    `docs/suggestions.md`, `architecture-map.md`'s component views) are *deduced*
    from the per-component files — summarise and point, never fork the content.
-4. **The doc is the spec (§6.6).** Code violating a composition rule ⟹ fix the code
+5. **The doc is the spec (§6.6).** Code violating a composition rule ⟹ fix the code
    or add an explicit `Note:` exception to the rule. Undocumented exceptions rot.
-5. **Immutable sessions.** Never edit a past `sessions/*.md`. New findings ⟹ new log
+6. **Immutable sessions.** Never edit a past `sessions/*.md`. New findings ⟹ new log
    + reconcile the *living* docs (STATUS, ARCHITECTURE).
-6. **Run the §4.5 checklist before merging** any non-trivial change (FRAMEWORK §8).
+7. **Run the §4.5 checklist before merging** any non-trivial change (FRAMEWORK §8).
 
 ---
 
@@ -194,8 +213,16 @@ Always launch independent agents in one batch so they run in parallel.
 
 ```
 /category-architect init
+/category-architect start
 ```
 
-→ builds the whole `docs/` tree from the current code, then generates suggestions.
-Thereafter open every session with `/category-architect start` and close it with
-`/category-architect end`. Full procedures live in `references/`.
+`init` builds the shared `docs/` tree from the current code and generates
+suggestions. After that, the team rule is:
+
+```
+/category-architect start
+# work
+/category-architect end
+```
+
+Full procedures live in `references/`.

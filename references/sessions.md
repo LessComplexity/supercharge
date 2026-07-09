@@ -1,121 +1,166 @@
-# sessions — start protocol, session logs, and end-of-session reconciliation
+# sessions - start protocol, handoff logs, and end reconciliation
 
-Two moments bracket every piece of work: **start** (orient from the docs) and
-**end** (reconcile the docs + write an immutable log). Both are defined here.
+Two commands bracket every piece of work:
 
----
+- `start` - recover the shared team/session state before touching code.
+- `end` - reconcile docs and write a handoff that makes the next `start` reliable.
 
-## start — orient a fresh session
-
-Do this before touching code, whenever a session begins or the user says `start`.
-
-1. **Read `FRAMEWORK.md`** (once) — the method for everything below.
-2. **Read `docs/sessions/`, latest first.** The most recent 1–3 logs carry the live
-   state, open ends, and the agreed next step. Read the latest fully; skim back
-   until you have the thread.
-3. **Read `docs/STATUS.md`** — the whole-system roll-up: which components are built /
-   partial / unbuilt and where the gaps are.
-4. **Select by the user's query.** From (2) and (3), pick the **relevant/latest
-   session(s)** and the **relevant component `STATUS.md`(s)**. Do not read every
-   component doc — route to the ones the query touches.
-5. **Drill in.** For the selected component(s), read `STATUS.md` → `ARCHITECTURE.md`
-   → `IMPLEMENTATION.md`, and any open `plans/plan-*.md`. Now you know the core of
-   the session as if you had run it.
-6. **Act.** Answer, or route to `plan` / `implement` (see [`build.md`](build.md)).
-
-If the tree does not exist yet, switch to `init` ([`init.md`](init.md)).
+The goal is practical continuity: a new agent or teammate should be able to run
+`start`, choose an open continuation, and proceed without chat history.
 
 ---
 
-## The session log — `sessions/YYYY-MM-DD-<slug>.md`
+## start - recover a fresh session
 
-**Immutable.** Never edit a past log; new findings ⟹ a new log + reconcile the
-*living* docs. The bar: another agent reads only this file and continues as though
-it ran the session — decisions, numbers, and open ends all present.
+Do this before touching code whenever a session begins, the user says `start`, or
+the user says `continue`.
 
-Write it at session end (or when the user says `end` / `reconcile`), **before**
-reconciling the other docs, so the log captures what actually happened.
+1. **Read `FRAMEWORK.md` once.** It is the method for every architecture and
+   reconciliation decision below.
+2. **Read `docs/sessions/`, latest first.** Read the latest log fully. Skim older
+   logs only until the open thread is clear.
+3. **Extract continuations.** From the latest logs, list open items and any live
+   handoff state: running commands, remote/local machines, jobs, ports, generated
+   data, branches, files, blockers, and exact inspect/resume commands.
+4. **Read `docs/STATUS.md`.** This tells you which components are built, partial,
+   or unbuilt, and points to the component docs.
+5. **Choose the session to continue.**
+   - If the user named a task, pick the matching open item/session.
+   - If the user only said `start` or `continue`, show the 1-3 most relevant
+     continuations and ask which to resume. If there is exactly one obvious open
+     continuation, resume it and say why.
+6. **Drill in only where needed.** For selected components, read `STATUS.md` ->
+   `ARCHITECTURE.md` -> `IMPLEMENTATION.md`, plus the relevant `plans/` or
+   `reviews/` files.
+7. **Rehydrate live state.** Run read-only inspect commands from the handoff when
+   useful: `git status`, process/job checks, cloud/job status commands, port
+   checks, artifact existence checks. Do not restart, stop, or mutate live systems
+   unless the user asked or the next step requires it.
+8. **Act.** Continue the recorded next step, answer, or route to the build flow
+   in [`build.md`](build.md).
 
-Reconcile **all** of the session's findings into it: what was done, what was
-concluded, decisions **made / kept / discarded** (with the reason for each),
-benchmarks, comparisons, tests run and what they proved, and every open end.
+If the docs tree does not exist yet, switch to `init` ([`init.md`](init.md)).
+
+---
+
+## The session log - `sessions/YYYY-MM-DD-<slug>.md`
+
+**Immutable.** Never edit a past log. New facts get a new log plus updates to the
+living docs (`STATUS`, `ARCHITECTURE`, `IMPLEMENTATION`, map, suggestions).
+
+The bar: another agent can read the latest relevant log and continue as though it
+ran the session. Record exact handles and commands, not vibes. Never record secret
+values; record secret names only, such as `OPENAI_API_KEY present in shell`.
+
+Write the final log during `end`, after reconciliation, so it can name exactly
+which docs were updated. If interrupted before `end` completes, the next `start`
+should say the previous session has no final handoff and recover from git/status
+facts.
 
 Template:
 
 ```markdown
-# YYYY-MM-DD — <slug>
+# YYYY-MM-DD - <slug>
 
-## §0 TL;DR
-<where it ended, honestly; the single agreed next step.>
+## 0. Continuation brief
+Current state: <one paragraph, honest and specific>
+Next step: <the single best next action>
+Resume command/check: `<exact command or file to open first>`
 
-## §1 What was done
-<the concrete work: features/components touched, code written, files changed.>
+## 1. Work completed
+<features/components touched, files changed, docs written, decisions executed.>
 
-## §2 Decisions
+## 2. Decisions
 | Decision | Verdict | Why |
 | --- | --- | --- |
 | <option A vs B> | kept A | <reason> |
 | <option C> | discarded | <reason> |
-Every non-trivial fork recorded — kept AND discarded, each with its reason, so the
-next agent doesn't re-litigate.
 
-## §3 Tests & benchmarks
-| Test / benchmark | Result | What it proved |
+Record kept and discarded options so the next session does not re-litigate them.
+
+## 3. Tests, checks, benchmarks
+| Check | Result | What it proved |
 | --- | --- | --- |
-| ... | ... | ... |
-Record exact configs/numbers, not "passed" — enough to reproduce.
+| `<command>` | <exact result> | <meaning> |
 
-## §4 Architecture / model changes
-<structural changes to any ARCHITECTURE.md: new objects/morphisms, changed
-placements, coherence-law impact. Flag anything that DIVERGES from the model and why.>
+Record exact configs/numbers/commit IDs when relevant.
 
-## §5 Open ends
-<ordered, each with the doc reference and a build→test recipe, so the next session
-continues without further instruction.>
+## 4. Live handoff state
+| Type | Handle / location | State | Inspect / resume | Stop / cleanup |
+| --- | --- | --- | --- | --- |
+| branch | `<branch>` | <dirty/clean/ahead> | `git status` | <none/command> |
+| process | <pid/session/name> | <running/stopped/unknown> | `<command>` | `<command or none>` |
+| machine/job | <provider/id/url> | <running/done/unknown> | `<command or URL>` | `<command or owner>` |
+| port | `<host:port>` | <serving/free/unknown> | `<command>` | `<command or none>` |
+| artifact | `<path or bucket/key>` | <created/partial/needed> | `<command>` | <keep/delete rule> |
+| data | `<dataset/table/file>` | <read/written/queued> | `<command>` | <rollback/none> |
 
-## §6 Docs reconciled this session
-<which STATUS / ARCHITECTURE / IMPLEMENTATION / map files were updated.>
+Include only rows that exist. If state cannot be verified, write `unknown` and the
+next inspect command. Do not leave live infrastructure or generated data only in
+chat.
 
-## §7 Files changed
-<the code files touched.>
+## 5. Open items
+| Priority | Item | Doc/code reference | Next action | Done when |
+| --- | --- | --- | --- | --- |
+| P0 | <thing> | `<path>` | <exact next step> | <observable check> |
+
+Every open item must have a next action and a done check.
+
+## 6. Architecture / model changes
+<new/changed objects, morphisms, placements, coherence-law impact, and any known
+model/code divergence.>
+
+## 7. Docs reconciled
+| Doc | Change |
+| --- | --- |
+| `<path>` | <what was reconciled> |
+
+## 8. Files changed
+<code/config/doc files touched, or `none`.>
 ```
 
-Adapt the section set to the project — a docs-only session has no §3, a pure
-research session no §7 — but keep §0, §2, and §5 always: they are what the next
-agent reads first.
+Adapt sections only by omission when truly irrelevant. Keep sections 0, 2, 4, 5,
+and 7 every time; they are the handoff.
 
 ---
 
-## end / reconcile — make the living docs true again
+## end / reconcile - make the next start reliable
 
-After the log is written, reconcile every doc the session affected, **bottom-up**
-so each level is deduced from a settled level below it (§4.3):
+Run this whenever the user says `end`, `reconcile`, or the work session is about
+to stop.
 
-1. **IMPLEMENTATION.md** (per touched component) — implementing changes the design;
-   feed reality back. Add/adjust rows for new morphisms & objects, update each
-   `file:symbol` and `State` (`built`/`partial`/`planned`). This is the ground
-   truth the rest deduces from.
-2. **ARCHITECTURE.md** (per touched component) — if the code changed a documented
-   relationship (a new field = a new morphism, §6.3), update the morphism table,
-   diagram, and composition rules in step. If code violated a rule, either fix the
-   code or add an explicit `Note:` exception (§6.6). Diagram ⇔ table stays exact.
-3. **Component `STATUS.md`** — recompute built/partial/unbuilt from the refreshed
-   IMPLEMENTATION states; update "needs work" and the "where to dig" index.
-4. **`docs/IMPLEMENTATION.md`** — re-deduce the system-level rows: a new/moved
-   component code root, a new shared object or inter-component port/transmission.
-   Per-morphism detail stays in the component files; only roll up here.
-5. **`docs/STATUS.md`** — re-deduce the one-row-per-component roll-up from the
-   component STATUS files. Summarise and point; never fork content.
-6. **`docs/architecture-map.md`** — only if components/atoms changed: refresh the
-   component table, placement rows, and re-run the §4.5 coherence checklist against
-   the new code.
-7. **suggestions** — if the model changed materially, re-run `suggest` for the
-   affected component(s) and refresh `docs/suggestions.md`
-   ([`status-suggestions.md`](status-suggestions.md)).
+1. **Snapshot live state.** Inspect and record:
+   - git branch/status and uncommitted work;
+   - running local commands, dev servers, ports, terminals, logs;
+   - remote machines, cloud jobs, queues, schedulers, deployments;
+   - generated artifacts, datasets, exports, uploads, or temporary files;
+   - blockers, approvals needed, and owner of the next decision.
+2. **Identify open items.** Each item needs priority, reference, next action, and
+   done check. If there are no open items, say `none`.
+3. **Reconcile affected docs bottom-up** so each level is deduced from settled
+   detail below it (§4.3):
+   - per-component `IMPLEMENTATION.md` - update objects/morphisms, `file:symbol`,
+     and `State` (`built`/`partial`/`planned`);
+   - per-component `ARCHITECTURE.md` - update model tables, diagrams, composition
+     rules, and explicit `Note:` exceptions;
+   - component `STATUS.md` - recompute built/partial/unbuilt and needs-work rows;
+   - `docs/IMPLEMENTATION.md` - roll up component roots, shared objects, and
+     inter-component ports/transmissions;
+   - `docs/STATUS.md` - roll up component state;
+   - `docs/architecture-map.md` - refresh only if components/atoms/coherence
+     changed;
+   - suggestions - refresh if the model changed materially.
+4. **Run or record checks.** Run the relevant tests/checks. If a check cannot run,
+   record why and the next command.
+5. **Write the immutable session log.** Use the template above. It must include
+   live handoff state, open items, docs reconciled, and exact resume/inspect
+   commands.
+6. **Final sanity statement.** State the next `start` path: latest log to read,
+   open item to continue, and first command/file to inspect.
 
-Delegate: one reconciliation agent per touched component (steps 1–3 in parallel),
-then a single agent for the roll-ups (steps 4–6). Match tiers per §6.
+Delegate reconciliation one component per agent when useful, then roll up once.
+Use independent verifiers for coherence-law claims when the change is non-trivial.
 
-**Definition of done for a session:** log written + all seven reconcile steps run for
-touched areas + the §4.5 checklist green (or a FAIL explicitly recorded as an open
-end in §5). The next `start` should open the latest log, read §5, and build.
+**Definition of done for a session:** docs reconciled, session log written, live
+state recorded or explicitly `none`, open items recorded or explicitly `none`, and
+the next `start` has a clear first step.

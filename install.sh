@@ -18,7 +18,7 @@ copy_skill() {
     [ -f "$PATHNAME" ] || [ -d "$PATHNAME" ] || continue
     BASENAME=$(basename -- "$PATHNAME")
     case "$BASENAME" in
-      install.sh|.claude|.codex|.git) continue ;;
+      install.sh|.claude|.codex|.git|.gitignore) continue ;;
     esac
     cp -R "$PATHNAME" "$DEST/"
   done
@@ -59,4 +59,5 @@ if [ "$FOUND" -eq 0 ]; then
   exit 1
 fi
 
-echo "Start a new Claude/Codex session, then run:  /category-architect init"
+echo "Run once:  /category-architect init"
+echo "Then start every session with /category-architect start and end with /category-architect end"

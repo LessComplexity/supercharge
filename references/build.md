@@ -119,8 +119,8 @@ change against the §4.5 checklist.
 
 ### 5. Session close
 If this ends the session, follow [`sessions.md`](sessions.md): write the immutable
-log, then confirm all reconciliations are done. Definition of done = code + green
-suite + reconciled docs + coherence checklist recorded.
+handoff log after reconciliation. Definition of done = code + green suite +
+reconciled docs + coherence checklist + live/open handoff state recorded.
 
 ---
 

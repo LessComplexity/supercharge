@@ -1,10 +1,28 @@
 # category-architect
 
-A Claude Code / Codex **skill** that makes an AI agent design, document, and build
-any software project as a **category** — using the bundled `FRAMEWORK.md`
-(Dat/Trn/Loc/Trm + category theory) as the single source of method.
+A Claude Code / Codex **team workflow skill** for making work survive from one
+session to the next.
 
-It gives a project a self-maintaining `docs/` knowledge base:
+The normal rhythm is simple:
+
+```text
+/category-architect init    # once per repo
+/category-architect start   # first command of every session
+/category-architect end     # last command of every session
+```
+
+`start` rebuilds context from shared docs and recent session logs. `end` records
+what changed, what is still open, how to resume it, and any live external state
+such as running commands, machines, jobs, ports, or generated data. A teammate can
+open a fresh agent, run `start`, choose the continuation, and keep working without
+reconstructing the previous session from chat history.
+
+The architecture side is formal on purpose: the bundled `FRAMEWORK.md` models the
+project as data (`Dat`), transformations (`Trn`), locations (`Loc`), and
+transmissions (`Trm`). That gives the team shared rules for planning, reviewing,
+and reconciling the system so implementation and docs do not drift.
+
+The skill creates and maintains a `docs/` knowledge base:
 
 - `docs/architecture-map.md` — a high-level whole-system map (four atoms,
   components, coherence checklist) that links down to detail;
@@ -13,10 +31,55 @@ It gives a project a self-maintaining `docs/` knowledge base:
   `plans/`, `reviews/`, `general/`;
 - `docs/IMPLEMENTATION.md`, `docs/STATUS.md`, `docs/suggestions.md` — deduced
   whole-system roll-ups;
-- `docs/sessions/` — immutable per-session logs any agent can resume from.
+- `docs/sessions/` — immutable per-session logs with decisions, open items, and
+  continuation state any agent can resume from.
 
-…and the workflow to keep all of it reconciled with the code across sessions and
+...and the workflow to keep all of it reconciled with the code across sessions and
 across many agents.
+
+## Team flow
+
+```mermaid
+flowchart TD
+  Init["/category-architect init<br/>create the shared docs model"] --> Docs["docs/<br/>architecture, status, sessions"]
+  Start["/category-architect start"] --> Read["read latest sessions + STATUS"]
+  Read --> Choice{"continue an open session?"}
+  Choice -->|"yes"| Resume["load the relevant component docs<br/>and resume from the recorded next step"]
+  Choice -->|"new task"| Plan["write or update a model-first plan"]
+  Resume --> Work["work: code, docs, tests, research"]
+  Plan --> Work
+  Work --> End["/category-architect end"]
+  End --> Snapshot["record decisions, open items,<br/>live commands, machines, jobs, artifacts"]
+  Snapshot --> Reconcile["reconcile IMPLEMENTATION, ARCHITECTURE,<br/>STATUS, suggestions, architecture map"]
+  Reconcile --> Log["write immutable session log"]
+  Log --> Docs
+  Docs --> Start
+```
+
+```mermaid
+sequenceDiagram
+  participant A as Agent / teammate A
+  participant D as docs/
+  participant B as Agent / teammate B
+
+  A->>D: start reads STATUS and latest sessions
+  A->>D: plan and work against formal architecture docs
+  A->>D: end writes handoff log and reconciles docs
+  B->>D: start reads latest handoff and open items
+  B->>D: continues from recorded commands, files, jobs, and next checks
+  B->>D: end writes the next immutable handoff
+```
+
+```mermaid
+flowchart LR
+  Model["ARCHITECTURE.md<br/>intended model"] --> Impl["IMPLEMENTATION.md<br/>model to file:symbol map"]
+  Impl --> Status["STATUS.md<br/>built / partial / unbuilt"]
+  Status --> Session["sessions/*.md<br/>what happened + what remains"]
+  Session --> StartAgain["next start<br/>recover context"]
+  Code["code"] --> Impl
+  Impl -. drift found .-> Model
+  Status -. roll up .-> Map["architecture-map.md<br/>whole-system view"]
+```
 
 ---
 
@@ -37,6 +100,12 @@ For a project-only install:
 
 ```bash
 ./install.sh --project
+```
+
+One-command install from GitHub after the repo is published:
+
+```bash
+tmp=$(mktemp -d) && git clone https://github.com/<owner>/category-architect.git "$tmp/category-architect" && "$tmp/category-architect/install.sh"
 ```
 
 ### From a downloaded folder
@@ -69,17 +138,50 @@ live.
 ## Use
 
 ```
-/category-architect init      # bootstrap the docs/ tree from your existing code
-/category-architect start     # orient a new session from the docs
-/category-architect end       # write the session log + reconcile all docs
-/category-architect suggest   # category-theory-derived improvement backlog
+/category-architect init      # run once: bootstrap docs from the existing code
+/category-architect start     # run first: recover the latest team/session state
+/category-architect end       # run last: reconcile docs and write the handoff log
+/category-architect suggest   # derive an improvement backlog from the formal model
 ```
 
-Or just describe the task — "map this project's architecture", "plan feature X",
-"reconcile the docs with the code" — and the skill routes to the right mode.
+The important habit is `start` then `end`. In between, describe the work normally:
+"continue the payment refactor", "plan feature X", "fix the failing import job",
+"reconcile the docs with the code". The skill routes the work through the shared
+model and leaves the next session a usable handoff.
 
 `FRAMEWORK.md` is bundled and is the base of everything. The agent reads it first
 each session. Every generated doc cites the framework section it applies.
+
+## Examples
+
+Start a new day:
+
+```text
+/category-architect start
+continue the import pipeline work
+```
+
+The skill reads the latest session logs, shows the relevant open items, checks the
+recorded branch/jobs/artifacts if needed, then resumes from the stored next step.
+
+End a session with unfinished work:
+
+```text
+/category-architect end
+```
+
+The skill records what is done, what remains, exact next commands, affected docs,
+test results, and any live state such as a dev server, cloud machine, queue job,
+port, generated file, or dataset. The next teammate starts from that log.
+
+Avoid architecture drift:
+
+```text
+plan the billing retry change
+```
+
+The skill writes or updates a model-first plan, maps the change to real
+`file:symbol`s, runs the coherence checks, and reconciles the docs at `end`.
 
 ---
 
@@ -99,4 +201,4 @@ category-architect/
     └── status-suggestions.md   # STATUS reconciliation + CT-derived suggestions
 ```
 
-Portable and self-contained — hand the folder (or the zip) to anyone.
+Portable and self-contained - hand the folder, zip, or GitHub repo to anyone.
