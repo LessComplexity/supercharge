@@ -1,6 +1,6 @@
 # category-architect
 
-A Claude Code / Codex **team workflow skill** for making work survive from one
+A Claude Code / Codex / Kimi **team workflow skill** for making work survive from one
 session to the next.
 
 The normal rhythm is simple:
@@ -138,9 +138,17 @@ tmp=$(mktemp -d) && git clone https://github.com/<owner>/category-architect.git 
 From inside the unpacked `category-architect/` folder:
 
 ```bash
-./install.sh            # installs into detected ~/.claude/skills and/or ~/.codex/skills
-./install.sh --project  # installs into detected ./.claude/skills and/or ./.codex/skills
+./install.sh            # installs into detected ~/.claude/skills, ~/.codex/skills,
+                        # ~/.config/opencode/skills, ~/.kimi-code/skills (Kimi Code CLI,
+                        # or ~/.agents/skills), and/or the Kimi Work desktop skills dir
+./install.sh --project  # installs into detected ./.claude/skills, ./.codex/skills,
+                        # ./.opencode/skills, and/or ./.kimi-code/skills (or ./.agents/skills)
 ```
+
+Kimi Work (the desktop app) keeps skills in a single user-level directory, so it is
+installed even with `--project`. If it lives somewhere other than
+`~/Library/Application Support/kimi-desktop/daimon-share/daimon`, point the
+installer at it with `KIMI_WORK_HOME=/path/to/daimon ./install.sh`.
 
 ### Copy by hand
 
@@ -148,15 +156,21 @@ From inside the unpacked `category-architect/` folder:
 # personal (all projects)
 cp -R category-architect ~/.claude/skills/
 cp -R category-architect ~/.codex/skills/
+cp -R category-architect ~/.kimi-code/skills/   # Kimi Code CLI (or ~/.agents/skills/)
+cp -R category-architect "$HOME/Library/Application Support/kimi-desktop/daimon-share/daimon/skills/"  # Kimi Work
 
 # or project-scoped (this repo only)
 mkdir -p .claude/skills && cp -R category-architect .claude/skills/
 mkdir -p .codex/skills && cp -R category-architect .codex/skills/
+mkdir -p .kimi-code/skills && cp -R category-architect .kimi-code/skills/
 ```
 
-That's it — no dependencies. Claude Code and Codex auto-discover skills in their
-`skills/` directories. Restart the session (or start a new one) and the skill is
-live.
+That's it — no dependencies. Claude Code, Codex, Kimi Code, and Kimi Work all
+auto-discover skills in their `skills/` directories. Kimi Code scans
+`$KIMI_CODE_HOME/skills/` (default `~/.kimi-code/skills/`) and `~/.agents/skills/`
+at user level, and `.kimi-code/skills/` or `.agents/skills/` at project level.
+Restart the session (or start a new one) and the skill is live. In Kimi
+Code you can also invoke it explicitly with `/skill:category-architect`.
 
 ---
 
