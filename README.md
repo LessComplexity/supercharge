@@ -113,12 +113,12 @@ flowchart LR
 ### From GitHub
 
 ```bash
-git clone https://github.com/<owner>/category-architect.git
+git clone https://github.com/LessComplexity/category-architect.git
 cd category-architect
 ./install.sh
 ```
 
-Replace `<owner>` with the GitHub user or org that publishes this repo.
+Replace `LessComplexity` with the GitHub user or org that publishes this repo.
 Re-running `./install.sh` updates the installed skill in place.
 
 For a project-only install:
@@ -130,7 +130,7 @@ For a project-only install:
 One-command install from GitHub after the repo is published:
 
 ```bash
-tmp=$(mktemp -d) && git clone https://github.com/<owner>/category-architect.git "$tmp/category-architect" && "$tmp/category-architect/install.sh"
+tmp=$(mktemp -d) && git clone https://github.com/LessComplexity/category-architect.git "$tmp/category-architect" && "$tmp/category-architect/install.sh"
 ```
 
 ### From a downloaded folder
