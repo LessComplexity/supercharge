@@ -22,83 +22,28 @@ cd supercharge
 ./install.sh
 ```
 
-`install.sh` installs the skill into every agent system it detects **and** every
-upstream tool it delegates to —
-OpenSpec, semble, graphify and gbrain (plus Bun, which gbrain needs). It never uses
-`sudo`, degrades rather than aborting, and re-running is safe: tools already present
-are reported, not reinstalled.
+That installs everything: the skill into every agent you already have, and the four
+tools it uses. Running it again is safe.
+
+Then once per project:
 
 ```bash
-./install.sh --project   # install the skill into this repo only
-./install.sh --no-deps   # skill only, skip the dependency steps
+openspec init     # sets up change tracking for this project
+graphify .        # builds the code graph
 ```
 
-**Agent systems covered.** Anything that loads a skill by copying a folder:
+Open `openspec/config.yaml` and paste in the block from
+[references/openspec.md](skills/supercharge/references/openspec.md#3-keeping-openspec-artifacts-categorical).
+It teaches OpenSpec your architecture rules.
 
-| System | Skills directory | `--project` scope |
-| --- | --- | --- |
-| Claude Code | `~/.claude/skills` | `./.claude/skills` |
-| Codex | `~/.codex/skills` | `./.codex/skills` |
-| opencode | `~/.config/opencode/skills` | `./.opencode/skills` |
-| Kimi Code CLI | `$KIMI_CODE_HOME/skills` (default `~/.kimi-code/skills`) | `./.kimi-code/skills` |
-| Shared / cross-tool | `~/.agents/skills` | `./.agents/skills` |
-| GitHub Copilot CLI | `~/.copilot/skills` | user-level only |
-| Pi | `~/.pi/agent/skills` | user-level only |
-| Hermes | `~/.hermes/skills` | user-level only |
-| Devin | `~/.config/devin/skills` | user-level only |
-| Kimi Work (desktop) | `~/Library/.../daimon/skills` | user-level only |
-
-Only directories that already exist are written to — the installer never creates an
-agent system you do not have. Override the two non-standard roots with
-`KIMI_CODE_HOME=` / `KIMI_WORK_HOME=`.
-
-**Agents that read `AGENTS.md` instead** — Aider, OpenClaw, Factory Droid, Trae and
-Codex — get a marker-delimited section written into `~/.codex/AGENTS.md` and
-`~/.agents/AGENTS.md` (plus `./AGENTS.md` with `--project`, which is the file
-project-scoped agents actually read). The block is bounded by
-`<!-- supercharge:begin -->` / `<!-- supercharge:end -->`, so re-running replaces it
-in place rather than appending a second copy, existing content is never touched, and
-deleting the block by hand is a clean uninstall.
-
-**Not covered:** Cursor, Gemini CLI, Amp, Antigravity, CodeBuddy and Kiro. Each wires
-tools through its own mechanism — `.cursor/rules/*.mdc`, a `GEMINI.md` section, a
-steering file — so each is a separate integration rather than a directory copy or a
-shared markdown section. Point them at the skill by hand:
-`~/.claude/skills/supercharge/SKILL.md` is self-contained.
-
-In Claude Code you can load it as a plugin instead of a bare skill — that also wires
-the semble MCP server from `.mcp.json`:
+Start working:
 
 ```
-/plugin marketplace add LessComplexity/supercharge
-/plugin install supercharge@supercharge
+/supercharge-start
 ```
 
-Then, per repo:
-
-```bash
-openspec init     # then paste the context:/rules: block from references/openspec.md
-graphify .        # builds graphify-out/ — add it to .gitignore
-```
-
-gbrain needs a one-time interactive setup the installer cannot do for you — run
-`gbrain init` (it asks for an embedding API key), then `gbrain doctor`. Wire its MCP
-server and skills with `/plugin marketplace add garrytan/gbrain` +
-`/plugin install gbrain@gbrain`.
-
-> **Never `npm install -g gbrain`.** The npm package of that name is an unrelated
-> GPU/ML library. The only supported sources are `github:garrytan/gbrain` and a git
-> clone — which is what `install.sh` uses.
-
-**Prerequisites:** Node ≥ 20.19 for OpenSpec, Bun ≥ 1.3.10 for gbrain (installed for
-you if absent). Everything is optional — see the
-[degradation matrix](#degradation-matrix). `install.sh` opts out of OpenSpec's
-telemetry (on by default upstream); re-enable with
-`openspec config set telemetry.enabled true`.
-
-Pins: semble is pinned to `0.5.5`; OpenSpec deliberately floats `@latest`, because
-`openspec update` regenerates a project's slash commands from the installed version
-and a stale pin drifts against the docs it writes.
+That's it. If something did not install, or you want to know exactly what went where,
+see [Install details](#install-details).
 
 ## The five slots
 
@@ -116,21 +61,35 @@ the failure mode is letting two of them answer the same one.
 ## The three modes
 
 ```mermaid
-flowchart LR
-  S["/supercharge-start"] --> P["preflight + graphify query"]
-  P --> L["newest docs/sessions/*.md<br/>live state + resume commands"]
-  L --> O["openspec list/status --json<br/>what is in flight"]
-  O --> W["work"]
-  W --> Plan["/opsx:propose<br/>proposal · design · tasks"]
-  Plan --> Impl["/opsx:apply<br/>semble locates touch sites"]
-  Impl --> Test["tests at volume<br/>partiality · invariants · §4.5"]
-  Test --> Rec["reconcile docs bottom-up"]
-  Rec --> D{"drift-check"}
-  D -->|"clean"| Arc["/opsx:archive"]
-  D -->|"dead rows"| Rec
-  Arc --> E["/supercharge-end"]
-  E --> Log["immutable session log<br/>+ graphify --update"]
-  Log --> S
+flowchart TD
+  subgraph M1["start — restore context (command)"]
+    direction TB
+    A1["preflight"] --> A2["graphify query<br/>orient structurally"]
+    A2 --> A3["newest docs/sessions/*.md<br/>live state + resume commands"]
+    A3 --> A4["openspec list/status --json<br/>what is in flight, what is ready next"]
+  end
+
+  subgraph M2["work — automatic, no command"]
+    direction TB
+    B1["plan → OpenSpec propose"] --> B2["implement → OpenSpec apply<br/>semble locates touch sites"]
+    B2 --> B3["tests at volume<br/>partiality · invariants · §4.5 laws"]
+    B3 --> B4["reconcile docs bottom-up<br/>IMPLEMENTATION → ARCHITECTURE → STATUS"]
+    B4 --> B5{"drift-check"}
+    B5 -->|"dead rows"| B4
+    B5 -->|"clean"| B6["OpenSpec archive"]
+  end
+
+  subgraph M3["end — make the next start reliable (command)"]
+    direction TB
+    C1{"drift-check"} -->|"dead rows"| C2["fix, or record as an open item"]
+    C1 -->|"clean"| C3
+    C2 --> C3["reconcile whatever the session touched"]
+    C3 --> C4["immutable session log<br/>decisions · live state · resume commands"]
+    C4 --> C5["graphify --update · gbrain capture"]
+  end
+
+  M1 --> M2 --> M3
+  M3 -.->|"next session"| M1
 ```
 
 | Mode | Reads | Writes | Delegates to |
@@ -258,6 +217,107 @@ Every tool is optional. Nothing here breaks a session.
 
 `preflight` reports what is absent, with the one install line that fixes it, and
 **never exits non-zero**.
+
+## Install details
+
+Everything here is reference — the [Install](#install) section is all you need to get
+running.
+
+### What `./install.sh` does
+
+1. Installs the four tools it delegates to: **OpenSpec** (via npm), **semble** and
+   **graphify** (via uv), **gbrain** (via Bun, which it installs first if absent).
+   Tools already present are reported, not reinstalled or upgraded.
+2. Copies the skill into every agent system it detects.
+3. Writes a marker-delimited section into the `AGENTS.md` files, for agents that read
+   those instead of loading a skill folder.
+4. Puts `supercharge-drift` and `supercharge-preflight` in `~/.local/bin`.
+5. Prints a dependency report.
+
+It never uses `sudo`, and it degrades rather than aborting — a tool that fails to
+install prints its own install line and the rest continues.
+
+```bash
+./install.sh --project   # install the skill into this repo only
+./install.sh --no-deps   # skill only, skip the tool installs
+```
+
+### Agent systems
+
+Anything that loads a skill by copying a folder:
+
+| System | Skills directory | `--project` scope |
+| --- | --- | --- |
+| Claude Code | `~/.claude/skills` | `./.claude/skills` |
+| Codex | `~/.codex/skills` | `./.codex/skills` |
+| opencode | `~/.config/opencode/skills` | `./.opencode/skills` |
+| Kimi Code CLI | `$KIMI_CODE_HOME/skills` (default `~/.kimi-code/skills`) | `./.kimi-code/skills` |
+| Shared / cross-tool | `~/.agents/skills` | `./.agents/skills` |
+| GitHub Copilot CLI | `~/.copilot/skills` | user-level only |
+| Pi | `~/.pi/agent/skills` | user-level only |
+| Hermes | `~/.hermes/skills` | user-level only |
+| Devin | `~/.config/devin/skills` | user-level only |
+| Kimi Work (desktop) | `~/Library/.../daimon/skills` | user-level only |
+
+Only directories that already exist are written to — the installer never creates an
+agent system you do not have. Override the two non-standard roots with
+`KIMI_CODE_HOME=` / `KIMI_WORK_HOME=`.
+
+**Agents that read `AGENTS.md` instead** — Aider, OpenClaw, Factory Droid, Trae and
+Codex — get a section written into `~/.codex/AGENTS.md` and `~/.agents/AGENTS.md`
+(plus `./AGENTS.md` with `--project`, the file project-scoped agents actually read).
+The block is bounded by `<!-- supercharge:begin -->` / `<!-- supercharge:end -->`, so
+re-running replaces it in place instead of appending a second copy, surrounding
+content is never touched, and deleting the block by hand is a clean uninstall.
+
+**Not covered:** Cursor, Gemini CLI, Amp, Antigravity, CodeBuddy and Kiro. Each wires
+tools through its own mechanism — `.cursor/rules/*.mdc`, a `GEMINI.md` section, a
+steering file — so each is a separate integration rather than a folder copy or a
+shared markdown section. Point them at the skill by hand:
+`~/.claude/skills/supercharge/SKILL.md` is self-contained.
+
+### Claude Code as a plugin
+
+Instead of a bare skill — this also wires the semble MCP server from `.mcp.json`:
+
+```
+/plugin marketplace add LessComplexity/supercharge
+/plugin install supercharge@supercharge
+```
+
+### gbrain setup
+
+`install.sh` installs the gbrain binary; a brain is separate. `gbrain init` creates a
+local PGLite brain at `~/.gbrain` and needs no API key for storage, but semantic
+search needs an embedding model — it will pick one up from an existing
+`OPENROUTER_API_KEY`, `OPENAI_API_KEY` or `VOYAGE_API_KEY`. Check with `gbrain doctor`.
+Wire its MCP server and skills with `/plugin marketplace add garrytan/gbrain` +
+`/plugin install gbrain@gbrain`.
+
+`preflight` distinguishes an installed gbrain from a usable one, and the `end` step
+skips its capture when no brain is configured.
+
+> **Never `npm install -g gbrain`.** The npm package of that name is an unrelated
+> GPU/ML library. The only supported sources are `github:garrytan/gbrain` and a git
+> clone — which is what `install.sh` uses.
+
+### Versions and telemetry
+
+**Prerequisites:** Node ≥ 20.19 for OpenSpec, Bun ≥ 1.3.10 for gbrain — installed for
+you if absent.
+
+semble is pinned to `0.5.5`. OpenSpec deliberately floats `@latest`, because
+`openspec update` regenerates a project's slash commands from the installed version
+and a stale pin drifts against the docs it writes.
+
+`install.sh` opts out of OpenSpec's telemetry, which is on by default upstream.
+Re-enable with `openspec config set telemetry.enabled true`.
+
+### If a tool is missing
+
+Run `supercharge-preflight`. It prints what is present, what is missing with the one
+line that fixes it, and never exits non-zero. Nothing here is mandatory — see the
+[degradation matrix](#degradation-matrix).
 
 ## Risks, honestly
 
