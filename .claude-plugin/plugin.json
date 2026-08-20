@@ -1,0 +1,21 @@
+{
+  "name": "supercharge",
+  "version": "1.0.0",
+  "description": "Session loop and architecture discipline. Restores context at start, records a resumable handoff at end, keeps docs reconciled with code, and proves the model→code map still resolves.",
+  "author": {
+    "name": "Sapir Shemer",
+    "url": "https://github.com/LessComplexity"
+  },
+  "homepage": "https://github.com/LessComplexity/supercharge",
+  "repository": "https://github.com/LessComplexity/supercharge",
+  "license": "MIT",
+  "keywords": [
+    "session-handoff",
+    "architecture",
+    "category-theory",
+    "documentation",
+    "drift",
+    "openspec",
+    "continuity"
+  ]
+}

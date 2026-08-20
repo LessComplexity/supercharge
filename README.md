@@ -1,243 +1,336 @@
-# category-architect
+# supercharge
 
-A Claude Code / Codex / Kimi **team workflow skill** for making work survive from one
-session to the next.
+Five slots, one loop, one install.
 
-The normal rhythm is simple:
-
-```text
-/category-architect init    # once per repo
-/category-architect start   # first command of every session
-/category-architect end     # last command of every session
-```
-
-`start` rebuilds context from shared docs and recent session logs. `end` records
-what changed, what is still open, how to resume it, and any live external state
-such as running commands, machines, jobs, ports, or generated data. A teammate can
-open a fresh agent, run `start`, choose the continuation, and keep working without
-reconstructing the previous session from chat history.
-
-The architecture side is formal on purpose. The bundled `FRAMEWORK.md` is the
-root method: it models the project as data (`Dat`), transformations (`Trn`),
-locations (`Loc`), and transmissions (`Trm`). Every proposed component, feature,
-boundary, and field has to land in that model and then map to real code via
-`file:symbol`. If it cannot be grounded that way, it is not accepted as fact - it
-becomes an open question, a planned item, or is discarded.
-
-That is the point of using category theory here: it keeps the AI from drifting
-into imagined architecture. The agent is forced to ask "what object is this?",
-"what morphism changes it?", "where does it run?", "what carries it across a
-boundary?", and "which real code realizes it?" The result is a formalized,
-grounded way to engineer the system, not just prettier documentation.
-
-How the formal basis works in practice:
-
-1. **Name the real objects.** Data, states, files, API payloads, queues, and
-   persisted records become `Dat`.
-2. **Name the real arrows.** Functions, jobs, transitions, validators, renders,
-   imports, and exports become `Trn`/morphisms.
-3. **Name the real placement.** Processes, browsers, servers, workers, databases,
-   and queues become `Loc`; cross-boundary carriers become `Trm`.
-4. **Map model to code.** Every object and morphism gets a `file:symbol` in
-   `IMPLEMENTATION.md`, or is marked planned/open.
-5. **Check laws before accepting structure.** Coherence failures become bugs,
-   explicit exceptions, or open work - not hand-waved prose.
-
-The skill creates and maintains a `docs/` knowledge base:
-
-- `docs/architecture-map.md` — a high-level whole-system map (four atoms,
-  components, coherence checklist) that links down to detail;
-- `docs/<component>/` — per component: `ARCHITECTURE.md` (the categorical model),
-  `IMPLEMENTATION.md` (model → code map), `STATUS.md`, `suggestions.md`, plus
-  `plans/`, `reviews/`, `general/`;
-- `docs/IMPLEMENTATION.md`, `docs/STATUS.md`, `docs/suggestions.md` — deduced
-  whole-system roll-ups;
-- `docs/sessions/` — immutable per-session logs with decisions, open items, and
-  continuation state any agent can resume from.
-
-...and the workflow to keep all of it reconciled with the code across sessions and
-across many agents.
-
-## Team flow
-
-```mermaid
-flowchart TD
-  Init["/category-architect init<br/>create the shared docs model"] --> Docs["docs/<br/>architecture, status, sessions"]
-  Start["/category-architect start"] --> Read["read latest sessions + STATUS"]
-  Read --> Choice{"continue an open session?"}
-  Choice -->|"yes"| Resume["load the relevant component docs<br/>and resume from the recorded next step"]
-  Choice -->|"new task"| Plan["write or update a model-first plan"]
-  Resume --> Work["work: code, docs, tests, research"]
-  Plan --> Work
-  Work --> End["/category-architect end"]
-  End --> Snapshot["record decisions, open items,<br/>live commands, machines, jobs, artifacts"]
-  Snapshot --> Reconcile["reconcile IMPLEMENTATION, ARCHITECTURE,<br/>STATUS, suggestions, architecture map"]
-  Reconcile --> Log["write immutable session log"]
-  Log --> Docs
-  Docs --> Start
-```
-
-```mermaid
-sequenceDiagram
-  participant A as Agent / teammate A
-  participant D as docs/
-  participant B as Agent / teammate B
-
-  A->>D: start reads STATUS and latest sessions
-  A->>D: plan and work against formal architecture docs
-  A->>D: end writes handoff log and reconciles docs
-  B->>D: start reads latest handoff and open items
-  B->>D: continues from recorded commands, files, jobs, and next checks
-  B->>D: end writes the next immutable handoff
-```
-
-```mermaid
-flowchart LR
-  Request["user request or agent idea"] --> Framework["FRAMEWORK.md<br/>Dat / Trn / Loc / Trm"]
-  Framework --> Grounded{"grounded in repo<br/>or explicit plan?"}
-  Grounded -->|"yes"| Model["ARCHITECTURE.md<br/>intended model"]
-  Grounded -->|"no"| Question["open question / discard<br/>do not invent"]
-  Model --> Impl["IMPLEMENTATION.md<br/>model to file:symbol map"]
-  Impl --> Status["STATUS.md<br/>built / partial / unbuilt"]
-  Status --> Session["sessions/*.md<br/>what happened + what remains"]
-  Session --> StartAgain["next start<br/>recover context"]
-  Code["code"] --> Impl
-  Impl -. drift found .-> Model
-  Status -. roll up .-> Map["architecture-map.md<br/>whole-system view"]
-```
+`supercharge` does **not** replace [semble](https://pypi.org/project/semble/),
+[graphify](https://pypi.org/project/graphifyy/) or
+[OpenSpec](https://github.com/Fission-AI/OpenSpec) — it routes them, and adds the
+one layer none of them have. Those three describe **what exists**, and a description
+derived from the code can never contradict the code. Drift is only detectable when
+something independent asserts *intent*. `supercharge` owns that assertion — the
+architecture model, the session handoff, and a script that proves the model→code map
+still resolves. Start a session, work against the shared model, end with a handoff
+another agent can resume from without chat history.
 
 ---
 
 ## Install
 
-### From GitHub
-
 ```bash
-git clone https://github.com/LessComplexity/category-architect.git
-cd category-architect
+git clone https://github.com/LessComplexity/supercharge.git
+cd supercharge
 ./install.sh
 ```
 
-Replace `LessComplexity` with the GitHub user or org that publishes this repo.
-Re-running `./install.sh` updates the installed skill in place.
-
-For a project-only install:
-
-```bash
-./install.sh --project
-```
-
-One-command install from GitHub after the repo is published:
+`install.sh` installs the skill into every agent system it detects **and** every
+upstream tool it delegates to —
+OpenSpec, semble, graphify and gbrain (plus Bun, which gbrain needs). It never uses
+`sudo`, degrades rather than aborting, and re-running is safe: tools already present
+are reported, not reinstalled.
 
 ```bash
-tmp=$(mktemp -d) && git clone https://github.com/LessComplexity/category-architect.git "$tmp/category-architect" && "$tmp/category-architect/install.sh"
+./install.sh --project   # install the skill into this repo only
+./install.sh --no-deps   # skill only, skip the dependency steps
 ```
 
-### From a downloaded folder
+**Agent systems covered.** Anything that loads a skill by copying a folder:
 
-From inside the unpacked `category-architect/` folder:
+| System | Skills directory | `--project` scope |
+| --- | --- | --- |
+| Claude Code | `~/.claude/skills` | `./.claude/skills` |
+| Codex | `~/.codex/skills` | `./.codex/skills` |
+| opencode | `~/.config/opencode/skills` | `./.opencode/skills` |
+| Kimi Code CLI | `$KIMI_CODE_HOME/skills` (default `~/.kimi-code/skills`) | `./.kimi-code/skills` |
+| Shared / cross-tool | `~/.agents/skills` | `./.agents/skills` |
+| GitHub Copilot CLI | `~/.copilot/skills` | user-level only |
+| Pi | `~/.pi/agent/skills` | user-level only |
+| Hermes | `~/.hermes/skills` | user-level only |
+| Devin | `~/.config/devin/skills` | user-level only |
+| Kimi Work (desktop) | `~/Library/.../daimon/skills` | user-level only |
+
+Only directories that already exist are written to — the installer never creates an
+agent system you do not have. Override the two non-standard roots with
+`KIMI_CODE_HOME=` / `KIMI_WORK_HOME=`.
+
+**Agents that read `AGENTS.md` instead** — Aider, OpenClaw, Factory Droid, Trae and
+Codex — get a marker-delimited section written into `~/.codex/AGENTS.md` and
+`~/.agents/AGENTS.md` (plus `./AGENTS.md` with `--project`, which is the file
+project-scoped agents actually read). The block is bounded by
+`<!-- supercharge:begin -->` / `<!-- supercharge:end -->`, so re-running replaces it
+in place rather than appending a second copy, existing content is never touched, and
+deleting the block by hand is a clean uninstall.
+
+**Not covered:** Cursor, Gemini CLI, Amp, Antigravity, CodeBuddy and Kiro. Each wires
+tools through its own mechanism — `.cursor/rules/*.mdc`, a `GEMINI.md` section, a
+steering file — so each is a separate integration rather than a directory copy or a
+shared markdown section. Point them at the skill by hand:
+`~/.claude/skills/supercharge/SKILL.md` is self-contained.
+
+In Claude Code you can load it as a plugin instead of a bare skill — that also wires
+the semble MCP server from `.mcp.json`:
+
+```
+/plugin marketplace add LessComplexity/supercharge
+/plugin install supercharge@supercharge
+```
+
+Then, per repo:
 
 ```bash
-./install.sh            # installs into detected ~/.claude/skills, ~/.codex/skills,
-                        # ~/.config/opencode/skills, ~/.kimi-code/skills (Kimi Code CLI,
-                        # or ~/.agents/skills), and/or the Kimi Work desktop skills dir
-./install.sh --project  # installs into detected ./.claude/skills, ./.codex/skills,
-                        # ./.opencode/skills, and/or ./.kimi-code/skills (or ./.agents/skills)
+openspec init     # then paste the context:/rules: block from references/openspec.md
+graphify .        # builds graphify-out/ — add it to .gitignore
 ```
 
-Kimi Work (the desktop app) keeps skills in a single user-level directory, so it is
-installed even with `--project`. If it lives somewhere other than
-`~/Library/Application Support/kimi-desktop/daimon-share/daimon`, point the
-installer at it with `KIMI_WORK_HOME=/path/to/daimon ./install.sh`.
+gbrain needs a one-time interactive setup the installer cannot do for you — run
+`gbrain init` (it asks for an embedding API key), then `gbrain doctor`. Wire its MCP
+server and skills with `/plugin marketplace add garrytan/gbrain` +
+`/plugin install gbrain@gbrain`.
 
-### Copy by hand
+> **Never `npm install -g gbrain`.** The npm package of that name is an unrelated
+> GPU/ML library. The only supported sources are `github:garrytan/gbrain` and a git
+> clone — which is what `install.sh` uses.
+
+**Prerequisites:** Node ≥ 20.19 for OpenSpec, Bun ≥ 1.3.10 for gbrain (installed for
+you if absent). Everything is optional — see the
+[degradation matrix](#degradation-matrix). `install.sh` opts out of OpenSpec's
+telemetry (on by default upstream); re-enable with
+`openspec config set telemetry.enabled true`.
+
+Pins: semble is pinned to `0.5.5`; OpenSpec deliberately floats `@latest`, because
+`openspec update` regenerates a project's slash commands from the installed version
+and a stale pin drifts against the docs it writes.
+
+## The five slots
+
+The most useful frame in the whole design. Every tool answers a different question;
+the failure mode is letting two of them answer the same one.
+
+| Slot | Tool | Answers | Scope | State it keeps | Machine-checkable |
+| --- | --- | --- | --- | --- | --- |
+| Retrieval — pinpoint | **semble** | where is symbol X | current code | index (disposable) | n/a |
+| Retrieval — structural | **graphify** | how does X connect to Y | repo corpus graph | `graphify-out/` (rebuildable) | n/a |
+| Memory — cross-project | **gbrain** | what did we decide, anywhere | all projects, non-code sources | brain git repo + PGLite | partial |
+| Work state | **OpenSpec** | what is in flight, what is next, is it done | one repo, per change | `openspec/` | **yes** |
+| Intent | **supercharge** | what the system is *supposed* to be | one repo, durable | `docs/` | via drift-check |
+
+## The three modes
+
+```mermaid
+flowchart LR
+  S["/supercharge-start"] --> P["preflight + graphify query"]
+  P --> L["newest docs/sessions/*.md<br/>live state + resume commands"]
+  L --> O["openspec list/status --json<br/>what is in flight"]
+  O --> W["work"]
+  W --> Plan["/opsx:propose<br/>proposal · design · tasks"]
+  Plan --> Impl["/opsx:apply<br/>semble locates touch sites"]
+  Impl --> Test["tests at volume<br/>partiality · invariants · §4.5"]
+  Test --> Rec["reconcile docs bottom-up"]
+  Rec --> D{"drift-check"}
+  D -->|"clean"| Arc["/opsx:archive"]
+  D -->|"dead rows"| Rec
+  Arc --> E["/supercharge-end"]
+  E --> Log["immutable session log<br/>+ graphify --update"]
+  Log --> S
+```
+
+| Mode | Reads | Writes | Delegates to |
+| --- | --- | --- | --- |
+| **`start`** | preflight · `graphify query` · newest `docs/sessions/*.md` · `openspec list/status --json` · `docs/STATUS.md` | nothing | graphify, OpenSpec |
+| **`work`** | the change's tasks · `ARCHITECTURE.md` · semble lookups | code · tests · `docs/**` reconciled · `reviews/review-<slug>.md` | OpenSpec propose/apply/archive, semble, graphify |
+| **`end`** | drift-check · git/live state · `openspec list/status --json` | `docs/sessions/YYYY-MM-DD-<slug>.md` · reconciled docs | graphify `--update`, gbrain `capture` |
+
+**Two commands, three modes.** `start` and `end` are rituals with no natural trigger
+in a prompt, so they get commands. `work` does not: the request to add, change or fix
+code *is* the trigger, and `start` has already loaded the flow into context. A
+`/supercharge-work` command would only re-inject text that is already there — and
+would imply the discipline is opt-in, which is the failure this skill exists to
+prevent.
+
+## Ownership law
+
+One writer per artifact. Breaking this is how four stores rot into four stale stores.
+
+```
+intent       → docs/<component>/ARCHITECTURE.md    supercharge — hand-authored, normative, small
+mapping      → docs/<component>/IMPLEMENTATION.md  supercharge rows, machine-verified by drift-check
+in-flight    → openspec/changes/<slug>/            OpenSpec — machine-checkable
+behaviour    → openspec/specs/<domain>/spec.md     OpenSpec — observable contract only
+continuity   → docs/sessions/<date>-<slug>.md      supercharge — live state + resume commands
+structure    → graphify-out/                       graphify — derived, never hand-edited
+memory       → the gbrain brain repo                 gbrain — an INDEX over docs/sessions/, never the original
+```
+
+Corollaries: nothing in `openspec/changes/` survives past archive; `graphify-out/` is
+derived and git-ignored; `docs/` is never generated wholesale.
+
+## What it creates in your repo
+
+| Path | Written by | Hand-authored or derived |
+| --- | --- | --- |
+| `docs/architecture-map.md` | you / the agent | hand-authored |
+| `docs/<component>/ARCHITECTURE.md` | you / the agent | hand-authored — the normative claim |
+| `docs/<component>/IMPLEMENTATION.md` | you / the agent | hand-authored rows, machine-**verified** |
+| `docs/<component>/STATUS.md`, `docs/STATUS.md` | `end` | derived from the rows above |
+| `docs/<component>/reviews/review-<slug>.md` | `work` | the §4.5 checklist run |
+| `docs/sessions/YYYY-MM-DD-<slug>.md` | `end` | hand-authored, **immutable** |
+| `openspec/` | OpenSpec | machine state — `changes/` is deleted at archive |
+| `graphify-out/` | graphify | derived — **git-ignore it** |
+
+There is no `plans/` folder: in-flight work lives in `openspec/changes/<slug>/`.
+
+## The formal basis
+
+[`FRAMEWORK.md`](skills/supercharge/FRAMEWORK.md) models the system as data (`Dat`),
+transformations (`Trn`), locations (`Loc`) and transmissions (`Trm`), with §4.5
+coherence laws you *check* rather than argue about.
+
+Every claim must be grounded in an object, morphism, location or transmission, and
+map to a real `file:symbol`, a planned item, or an explicit open question. The point
+is to stop agents inventing architecture, not to produce prettier documents. An
+agent that must answer "what object is this?", "what morphism changes it?", "where
+does it run?", "what carries it across a boundary?" and "which real code realises
+it?" cannot quietly hallucinate a subsystem.
+
+```mermaid
+flowchart LR
+  Request["user request<br/>or agent idea"] --> Framework["FRAMEWORK.md<br/>Dat / Trn / Loc / Trm"]
+  Framework --> Grounded{"grounded in repo<br/>or explicit plan?"}
+  Grounded -->|"yes"| Model["ARCHITECTURE.md<br/>intended model"]
+  Grounded -->|"no"| Question["open question / discard<br/>do not invent"]
+  Model --> Impl["IMPLEMENTATION.md<br/>model → file:symbol"]
+  Impl --> Drift{"drift-check"}
+  Drift -->|"dead row"| Model
+  Drift -->|"resolves"| Status["STATUS.md<br/>built / partial / unbuilt"]
+  Status --> Session["sessions/*.md<br/>what happened + what remains"]
+  Code["code"] --> Impl
+```
+
+Read `FRAMEWORK.md` rather than this summary — it is the spine, and every generated
+doc cites the section it applies.
+
+## drift-check
+
+The one piece of genuinely new machinery. `IMPLEMENTATION.md` claims the model maps
+to code; nothing verified it. This does.
+
+It extracts every backticked `path:symbol` from `docs/*/IMPLEMENTATION.md`, resolves
+the path against `git ls-files` by **path suffix** (so docs may use repo-relative or
+service-relative paths), then confirms the symbol still appears in that file. A dead
+row is drift.
 
 ```bash
-# personal (all projects)
-cp -R category-architect ~/.claude/skills/
-cp -R category-architect ~/.codex/skills/
-cp -R category-architect ~/.kimi-code/skills/   # Kimi Code CLI (or ~/.agents/skills/)
-cp -R category-architect "$HOME/Library/Application Support/kimi-desktop/daimon-share/daimon/skills/"  # Kimi Work
-
-# or project-scoped (this repo only)
-mkdir -p .claude/skills && cp -R category-architect .claude/skills/
-mkdir -p .codex/skills && cp -R category-architect .codex/skills/
-mkdir -p .kimi-code/skills && cp -R category-architect .kimi-code/skills/
+supercharge-drift              # human-readable
+supercharge-drift . --json     # {"dead":N,"total":N,"rows":[...]}
+supercharge-drift --selftest   # builds a fixture, asserts both exit codes
 ```
 
-That's it — no dependencies. Claude Code, Codex, Kimi Code, and Kimi Work all
-auto-discover skills in their `skills/` directories. Kimi Code scans
-`$KIMI_CODE_HOME/skills/` (default `~/.kimi-code/skills/`) and `~/.agents/skills/`
-at user level, and `.kimi-code/skills/` or `.agents/skills/` at project level.
-Restart the session (or start a new one) and the skill is live. In Kimi
-Code you can also invoke it explicitly with `/skill:category-architect`.
+**Exit code 0 when everything resolves, non-zero otherwise** — so it drops straight
+into CI:
 
----
-
-## Use
-
-```
-/category-architect init      # run once: bootstrap docs from the existing code
-/category-architect start     # run first: recover the latest team/session state
-/category-architect end       # run last: reconcile docs and write the handoff log
-/category-architect suggest   # derive an improvement backlog from the formal model
+```yaml
+- run: ./skills/supercharge/scripts/drift-check.sh .
 ```
 
-The important habit is `start` then `end`. In between, describe the work normally:
-"continue the payment refactor", "plan feature X", "fix the failing import job",
-"reconcile the docs with the code". The skill routes the work through the shared
-model and leaves the next session a usable handoff.
+**Measured, first run, on a real repo** (129 docs, 6 components): **59 dead / 345
+refs — 32 dead paths, 27 dead symbols**, concentrated in one component (48 of them)
+whose source directory had been renamed without the docs following. Real signal, from
+~30 lines of shell.
 
-`FRAMEWORK.md` is bundled and is the base of everything. The agent reads it first
-each session. Every generated doc cites the framework section it applies.
+Given a ~17% dead-row baseline on a repo that has never run it, **run it advisory for
+the first month** and only then gate merges.
 
-## Examples
+**Known ceiling.** Symbols are matched by substring grep, so a renamed symbol that
+survives as a substring elsewhere in the file still passes, and refs written as a bare
+filename (`order.py:Order.total`, no directory) are skipped to avoid matching prose.
+The upgrade path is resolution through `semble search` or an LSP — not a stricter
+regex. Do not pre-build it.
 
-Start a new day:
+## Degradation matrix
 
-```text
-/category-architect start
-continue the import pipeline work
+Every tool is optional. Nothing here breaks a session.
+
+| Missing | `start` | `work` | `end` |
+| --- | --- | --- | --- |
+| graphify | orient from `docs/` + sessions only | unaffected | skip the graph refresh |
+| OpenSpec | no in-flight list | write the change folder by hand | no change snapshot |
+| semble | slower location lookups | grep fallback | unaffected |
+| gbrain | unaffected | unaffected | session log written, just not indexed across repos |
+
+`preflight` reports what is absent, with the one install line that fixes it, and
+**never exits non-zero**.
+
+## Risks, honestly
+
+1. **Trigger roulette.** `/supercharge`, `/graphify` and `/opsx:*` sit in the same
+   skill list; overlapping descriptions make routing *worse*, not better. Mitigated
+   by scoping this skill's description to the session loop and architecture
+   discipline only — it never claims "questions about the codebase" (graphify's
+   trigger) or "propose a change" (OpenSpec's) — and by retiring
+   `category-architect` in the same change. Five skills where there were four is a
+   regression.
+2. **Version drift in delegation.** Every delegated command name lives in exactly
+   one file, [`references/openspec.md`](skills/supercharge/references/openspec.md),
+   never scattered through `SKILL.md`. Nothing we do not own is pinned; `preflight`
+   surfaces version mismatch early.
+3. **Four memory stores.** `docs/` + `openspec/` + `graphify-out/` + optionally
+   gbrain. Mitigated by the ownership law above, enforced as a hard rule in
+   `SKILL.md`.
+4. **`specs/` vs `ARCHITECTURE.md` duplication.** Both plausibly answer "what does
+   this do". Decide A (skip specs) or B (specs = external surface only, the default)
+   per repo and record it in `openspec/config.yaml` —
+   [`references/openspec.md` §4](skills/supercharge/references/openspec.md).
+5. **Upstream churn.** OpenSpec moves fast. Mitigated by a thin router and zero
+   vendoring: graphify's skill, OpenSpec's skills and slash commands, and semble's
+   server are all installed and updated upstream, never forked here.
+6. **Loose symbol matching in drift-check** — documented ceiling, above.
+7. **Two narrative stores.** gbrain and `docs/sessions/` both hold prose about what
+   happened, and the second one always goes stale — unless only one of them writes.
+   So only one does: **supercharge authors the session log, gbrain indexes it**
+   (`gbrain capture --file docs/sessions/<newest>.md`, the last step of `end`). The
+   file in git stays the source of record — reviewable in PRs and diffable. Never
+   write a session narrative straight into gbrain. What gbrain adds that this loop
+   cannot: `think`, whose gap analysis states what the brain does *not* know.
+
+## Migrating from `category-architect`
+
+`supercharge` is the rewrite of `category-architect`. **Retire the old skill in the
+same change** — leaving both installed is the trigger-collision risk above.
+
+```bash
+rm -rf ~/.claude/skills/category-architect ~/.codex/skills/category-architect
 ```
 
-The skill reads the latest session logs, shows the relevant open items, checks the
-recorded branch/jobs/artifacts if needed, then resumes from the stored next step.
+| Was | Now |
+| --- | --- |
+| `SKILL.md`, 4 modes + build flow | `skills/supercharge/SKILL.md`, 3 modes, everything else delegated |
+| `FRAMEWORK.md` | unchanged — the spine |
+| `references/init.md` | folded into `references/docs-tree.md`; components now derive from graphify communities |
+| `references/build.md` step 1 (plan template) | deleted → OpenSpec's propose flow |
+| `references/build.md` steps 2–4 | `references/reconcile.md`, intact |
+| `references/sessions.md` | `references/sessions.md` + the OpenSpec snapshot step |
+| `references/authoring.md` | split into `references/docs-tree.md` (templates) and `references/reconcile.md` (procedure) |
+| `references/status-suggestions.md` | folded into `references/docs-tree.md`, trimmed |
+| `docs/*/plans/*.md` in adopting repos | **leave in place.** Do not migrate history into `openspec/changes/`. New work only. |
 
-End a session with unfinished work:
-
-```text
-/category-architect end
-```
-
-The skill records what is done, what remains, exact next commands, affected docs,
-test results, and any live state such as a dev server, cloud machine, queue job,
-port, generated file, or dataset. The next teammate starts from that log.
-
-Avoid architecture drift:
-
-```text
-plan the billing retry change
-```
-
-The skill writes or updates a model-first plan, maps the change to real
-`file:symbol`s, runs the coherence checks, and reconciles the docs at `end`.
-
----
-
-## What's in this folder
+## Layout
 
 ```
-category-architect/
-├── SKILL.md                    # the skill: overview, doc tree, modes, disciplines
-├── FRAMEWORK.md                # the method (category theory) — base of everything
-├── README.md                   # this file
-├── install.sh                  # copies the skill into place
-└── references/
-    ├── init.md                 # bootstrap procedure
-    ├── authoring.md            # how to write each doc type, with templates
-    ├── sessions.md             # start protocol + session logs + reconciliation
-    ├── build.md                # plan → implement → test → fix → reconcile
-    └── status-suggestions.md   # STATUS reconciliation + CT-derived suggestions
+supercharge/
+├── .claude-plugin/{plugin,marketplace}.json
+├── .mcp.json                    # semble MCP server
+├── install.sh                   # skill + all four dependencies
+├── commands/supercharge-{start,end}.md   # work has no command — it is the default
+└── skills/supercharge/          # self-contained — this is what gets copied
+    ├── SKILL.md                 # the router: start | work | end
+    ├── FRAMEWORK.md             # the method — vendored, ours, unchanged
+    ├── references/
+    │   ├── docs-tree.md         # the docs/ contract + every template + scaffolding
+    │   ├── reconcile.md         # implement → test at volume → reconcile → review
+    │   ├── sessions.md          # start protocol, handoff log, end procedure
+    │   └── openspec.md          # the delegation map — the ONLY place command names live
+    └── scripts/
+        ├── preflight.sh         # what is installed; never exits non-zero
+        └── drift-check.sh       # IMPLEMENTATION.md rows → resolve file:symbol → dead rows
 ```
 
-Portable and self-contained - hand the folder, zip, or GitHub repo to anyone.
+MIT.

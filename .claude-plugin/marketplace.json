@@ -1,0 +1,14 @@
+{
+  "name": "supercharge",
+  "owner": {
+    "name": "Sapir Shemer",
+    "url": "https://github.com/LessComplexity"
+  },
+  "plugins": [
+    {
+      "name": "supercharge",
+      "source": "./",
+      "description": "Session loop and architecture discipline: start restores context, end writes a resumable handoff, work keeps docs reconciled with code."
+    }
+  ]
+}
