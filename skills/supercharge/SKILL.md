@@ -124,7 +124,8 @@ in context for the rest of the session; the references are read on demand.
    **exact resume/inspect commands**. Template and bar:
    [`references/sessions.md`](references/sessions.md).
 5. Update the graph so it tracks the new code.
-6. If gbrain is installed, index the log you just wrote —
+6. If gbrain is installed **and preflight did not report an unconfigured brain**,
+   index the log you just wrote —
    `gbrain capture --file docs/sessions/<newest>.md`. Index, never author: the file in
    git stays the source of record. Its `think` gap analysis (what the brain does *not*
    know) is the one capability this loop cannot produce on its own.

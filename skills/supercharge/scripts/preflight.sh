@@ -28,7 +28,16 @@ if   have semble; then echo "semble    $(ver semble --version)"
 elif have uvx;    then echo "semble    via uvx (no local install)"
 else echo "semble    MISSING → uv tool install 'semble[mcp]==0.5.5'"; missing=1; fi
 
-if have gbrain; then echo "gbrain    $(ver gbrain --version)"
+if have gbrain; then
+  # Installed is not the same as usable: `gbrain init` is interactive and no installer
+  # can run it, so the binary exists long before a brain does. `doctor` exits 0 either
+  # way, so match its output rather than its status.
+  if gbrain doctor 2>&1 | grep -qi "no brain configured"; then
+    echo "gbrain    $(ver gbrain --version) — INSTALLED BUT NO BRAIN → run: gbrain init (interactive)"
+    echo "          until then, skip the capture step at the end of 'end'"
+  else
+    echo "gbrain    $(ver gbrain --version)"
+  fi
 else echo "gbrain    MISSING → bun install -g github:garrytan/gbrain   (NOT npm — that is a different package)"; missing=1; fi
 
 have git || { echo "git       MISSING → required by drift-check"; missing=1; }
