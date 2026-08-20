@@ -312,19 +312,20 @@ line that fixes it, and never exits non-zero. Nothing here is mandatory — see 
 ## Risks, honestly
 
 1. **Trigger roulette.** `/supercharge`, `/graphify` and `/opsx:*` sit in the same
-   skill list; overlapping descriptions make routing *worse*, not better. Mitigated
+   skill list, and overlapping descriptions make routing *worse*, not better — the
+   classic failure of putting a router on top of tools that already work. Mitigated
    by scoping this skill's description to the session loop and architecture
-   discipline only — it never claims "questions about the codebase" (graphify's
-   trigger) or "propose a change" (OpenSpec's) — and by retiring
-   `category-architect` in the same change. Five skills where there were four is a
-   regression.
+   discipline only: it never claims "questions about the codebase" (graphify's
+   trigger) or "propose a change" (OpenSpec's).
 2. **Version drift in delegation.** Every delegated command name lives in exactly
    one file, [`references/openspec.md`](skills/supercharge/references/openspec.md),
    never scattered through `SKILL.md`. Nothing we do not own is pinned; `preflight`
    surfaces version mismatch early.
-3. **Four memory stores.** `docs/` + `openspec/` + `graphify-out/` + optionally
-   gbrain. Mitigated by the ownership law above, enforced as a hard rule in
-   `SKILL.md`.
+3. **Four memory stores.** `docs/`, `openspec/`, `graphify-out/` and the gbrain
+   brain. Left unpoliced they duplicate each other within a month. Mitigated by the
+   ownership law above, enforced as a hard rule in `SKILL.md`: one writer per
+   artifact, `openspec/changes/` does not survive archive, `graphify-out/` is derived
+   and git-ignored, `docs/` is never generated wholesale.
 4. **`specs/` vs `ARCHITECTURE.md` duplication.** Both plausibly answer "what does
    this do". Decide A (skip specs) or B (specs = external surface only, the default)
    per repo and record it in `openspec/config.yaml` —
@@ -333,34 +334,19 @@ line that fixes it, and never exits non-zero. Nothing here is mandatory — see 
    vendoring: graphify's skill, OpenSpec's skills and slash commands, and semble's
    server are all installed and updated upstream, never forked here.
 6. **Loose symbol matching in drift-check** — documented ceiling, above.
-7. **Two narrative stores.** gbrain and `docs/sessions/` both hold prose about what
+7. **The loop is packaged but unproven.** `drift-check` is self-tested and the
+   OpenSpec surface is verified against a live install, but no real change has yet
+   gone end to end through propose → apply → reconcile → archive. The two claims that
+   no self-test can reach are still untested: that `openspec status --json` actually
+   lowers the cost of "where were we", and that the `rules:` block genuinely keeps
+   OpenSpec artifacts categorical rather than just adding prose to a prompt.
+8. **Two narrative stores.** gbrain and `docs/sessions/` both hold prose about what
    happened, and the second one always goes stale — unless only one of them writes.
    So only one does: **supercharge authors the session log, gbrain indexes it**
    (`gbrain capture --file docs/sessions/<newest>.md`, the last step of `end`). The
    file in git stays the source of record — reviewable in PRs and diffable. Never
    write a session narrative straight into gbrain. What gbrain adds that this loop
    cannot: `think`, whose gap analysis states what the brain does *not* know.
-
-## Migrating from `category-architect`
-
-`supercharge` is the rewrite of `category-architect`. **Retire the old skill in the
-same change** — leaving both installed is the trigger-collision risk above.
-
-```bash
-rm -rf ~/.claude/skills/category-architect ~/.codex/skills/category-architect
-```
-
-| Was | Now |
-| --- | --- |
-| `SKILL.md`, 4 modes + build flow | `skills/supercharge/SKILL.md`, 3 modes, everything else delegated |
-| `FRAMEWORK.md` | unchanged — the spine |
-| `references/init.md` | folded into `references/docs-tree.md`; components now derive from graphify communities |
-| `references/build.md` step 1 (plan template) | deleted → OpenSpec's propose flow |
-| `references/build.md` steps 2–4 | `references/reconcile.md`, intact |
-| `references/sessions.md` | `references/sessions.md` + the OpenSpec snapshot step |
-| `references/authoring.md` | split into `references/docs-tree.md` (templates) and `references/reconcile.md` (procedure) |
-| `references/status-suggestions.md` | folded into `references/docs-tree.md`, trimmed |
-| `docs/*/plans/*.md` in adopting repos | **leave in place.** Do not migrate history into `openspec/changes/`. New work only. |
 
 ## Layout
 
