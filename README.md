@@ -62,34 +62,24 @@ the failure mode is letting two of them answer the same one.
 
 ```mermaid
 flowchart TD
-  subgraph M1["start — restore context (command)"]
-    direction TB
-    A1["preflight"] --> A2["graphify query<br/>orient structurally"]
-    A2 --> A3["newest docs/sessions/*.md<br/>live state + resume commands"]
-    A3 --> A4["openspec list/status --json<br/>what is in flight, what is ready next"]
-  end
-
-  subgraph M2["work — automatic, no command"]
-    direction TB
-    B1["plan → OpenSpec propose"] --> B2["implement → OpenSpec apply<br/>semble locates touch sites"]
-    B2 --> B3["tests at volume<br/>partiality · invariants · §4.5 laws"]
-    B3 --> B4["reconcile docs bottom-up<br/>IMPLEMENTATION → ARCHITECTURE → STATUS"]
-    B4 --> B5{"drift-check"}
-    B5 -->|"dead rows"| B4
-    B5 -->|"clean"| B6["OpenSpec archive"]
-  end
-
-  subgraph M3["end — make the next start reliable (command)"]
-    direction TB
-    C1{"drift-check"} -->|"dead rows"| C2["fix, or record as an open item"]
-    C1 -->|"clean"| C3
-    C2 --> C3["reconcile whatever the session touched"]
-    C3 --> C4["immutable session log<br/>decisions · live state · resume commands"]
-    C4 --> C5["graphify --update · gbrain capture"]
-  end
-
-  M1 --> M2 --> M3
-  M3 -.->|"next session"| M1
+  S["/supercharge-start"] --> P["preflight + graphify query"]
+  P --> L["newest docs/sessions/*.md<br/>live state + resume commands"]
+  L --> O["openspec list/status --json<br/>what is in flight"]
+  O --> W["work — automatic, no command"]
+  W --> Plan["/opsx:propose<br/>proposal · design · tasks"]
+  Plan --> Impl["/opsx:apply<br/>semble locates touch sites"]
+  Impl --> Test["tests at volume<br/>partiality · invariants · §4.5"]
+  Test --> Rec["reconcile docs bottom-up<br/>IMPLEMENTATION → ARCHITECTURE → STATUS"]
+  Rec --> D{"drift-check"}
+  D -->|"dead rows"| Rec
+  D -->|"clean"| Arc["/opsx:archive"]
+  Arc --> E["/supercharge-end"]
+  E --> D2{"drift-check"}
+  D2 -->|"dead rows"| Fix["fix, or record as an open item"]
+  D2 -->|"clean"| Log
+  Fix --> Log["immutable session log<br/>decisions · live state · resume commands"]
+  Log --> Up["graphify --update · gbrain capture"]
+  Up --> S
 ```
 
 | Mode | Reads | Writes | Delegates to |
