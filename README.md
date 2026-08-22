@@ -276,14 +276,27 @@ steering file — so each is a separate integration rather than a folder copy or
 shared markdown section. Point them at the skill by hand:
 `~/.claude/skills/supercharge/SKILL.md` is self-contained.
 
-### Claude Code as a plugin
+### As a plugin instead of a bare skill
 
-Instead of a bare skill — this also wires the semble MCP server from `.mcp.json`:
+Claude Code and Codex can both load this as a plugin, which also registers the semble
+MCP server for you.
 
 ```
+# Claude Code
 /plugin marketplace add LessComplexity/supercharge
 /plugin install supercharge@supercharge
 ```
+
+```bash
+# Codex
+codex plugin marketplace add LessComplexity/supercharge
+codex plugin add supercharge@supercharge
+```
+
+Both read the same `.claude-plugin/marketplace.json`. Codex then takes its manifest
+and MCP config from `.codex-plugin/`, which uses its own `env_vars` allowlist format;
+Claude Code takes `.claude-plugin/plugin.json` and `.mcp.json`. Refresh a Codex
+snapshot after an upstream change with `codex plugin marketplace upgrade`.
 
 ### gbrain setup
 
@@ -363,7 +376,8 @@ line that fixes it, and never exits non-zero. Nothing here is mandatory — see 
 ```
 supercharge/
 ├── .claude-plugin/{plugin,marketplace}.json
-├── .mcp.json                    # semble MCP server
+├── .codex-plugin/{plugin,mcp}.json       # same plugin, Codex's manifest format
+├── .mcp.json                    # semble MCP server (Claude Code)
 ├── install.sh                   # skill + all four dependencies
 ├── commands/supercharge-{start,end}.md   # work has no command — it is the default
 └── skills/supercharge/          # self-contained — this is what gets copied

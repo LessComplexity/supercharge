@@ -254,7 +254,9 @@ Next, per repo:
   graphify .               # builds graphify-out/  (add it to .gitignore)
   /supercharge-start       # first command of every session
 
-Claude Code can also load this as a plugin instead of a bare skill:
-  /plugin marketplace add LessComplexity/supercharge
-  /plugin install supercharge@supercharge
+Or load it as a plugin instead of a bare skill (also wires the semble MCP server):
+  Claude Code:  /plugin marketplace add LessComplexity/supercharge
+                /plugin install supercharge@supercharge
+  Codex:        codex plugin marketplace add LessComplexity/supercharge
+                codex plugin add supercharge@supercharge
 NEXT

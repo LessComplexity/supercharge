@@ -1,0 +1,39 @@
+{
+  "name": "supercharge",
+  "version": "1.0.0",
+  "description": "Session loop and architecture discipline. Restores context at start, records a resumable handoff at end, keeps docs reconciled with code, and proves the model→code map still resolves.",
+  "author": {
+    "name": "Sapir Shemer",
+    "url": "https://github.com/LessComplexity"
+  },
+  "homepage": "https://github.com/LessComplexity/supercharge",
+  "repository": "https://github.com/LessComplexity/supercharge",
+  "license": "MIT",
+  "keywords": [
+    "session-handoff",
+    "architecture",
+    "category-theory",
+    "documentation",
+    "drift",
+    "openspec",
+    "continuity"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.codex-plugin/mcp.json",
+  "interface": {
+    "displayName": "supercharge",
+    "shortDescription": "Start every session with context, end every one with a handoff",
+    "longDescription": "Five slots, one loop. supercharge owns the session loop and the intent layer, and routes everything else to semble, graphify, OpenSpec and gbrain. start restores where you were from the newest session log and the in-flight change list; work plans through OpenSpec and reconciles the architecture docs against what the code actually became; end writes an immutable handoff with live execution state and exact resume commands. A drift check proves every file:symbol the docs claim still resolves, so stale architecture is caught rather than believed. Requires git; openspec, semble, graphify and gbrain are optional and each degrades cleanly.",
+    "developerName": "Sapir Shemer",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/LessComplexity/supercharge",
+    "defaultPrompt": [
+      "Restore where we left off, then keep the architecture docs true as we work"
+    ],
+    "brandColor": "#4f8cf7"
+  }
+}
