@@ -298,6 +298,13 @@ and MCP config from `.codex-plugin/`, which uses its own `env_vars` allowlist fo
 Claude Code takes `.claude-plugin/plugin.json` and `.mcp.json`. Refresh a Codex
 snapshot after an upstream change with `codex plugin marketplace upgrade`.
 
+**Kimi has no plugin route.** Its registry installs signed zips from `code.kimi.com`,
+with no third-party command, so the skill install is the supported path there — and it
+is already covered: `~/.kimi-code/skills`, `~/.agents/skills`, and the Kimi Work
+desktop skills directory. Because it gets no plugin manifest, `install.sh` merges the
+semble MCP server into `~/.kimi-code/mcp.json` directly, preserving every server
+already registered there.
+
 ### gbrain setup
 
 `install.sh` installs the gbrain binary; a brain is separate. `gbrain init` creates a

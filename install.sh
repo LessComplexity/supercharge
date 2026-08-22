@@ -166,6 +166,41 @@ if [ "$FOUND" -eq 0 ]; then
   exit 1
 fi
 
+# ------------------------------------------------------------------ MCP servers
+# Claude Code and Codex get semble from the plugin manifests. Agents that keep a plain
+# mcpServers JSON file and have no plugin route need it merged in by hand — MERGED, so
+# whatever else the user already registered survives.
+merge_mcp() {
+  f=$1
+  [ -f "$f" ] || return 0
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "  no python3 — add this to $f by hand:"
+    echo '    "semble": { "command": "uvx", "args": ["--from", "semble[mcp]==0.5.5", "semble"] }'
+    return 0
+  fi
+  python3 - "$f" <<'PYEOF'
+import json, sys
+p = sys.argv[1]
+try:
+    d = json.load(open(p))
+except Exception as e:
+    print(f"  skipped {p} (unreadable: {e})"); raise SystemExit(0)
+servers = d.setdefault("mcpServers", {})
+want = {"command": "uvx", "args": ["--from", "semble[mcp]==0.5.5", "semble"]}
+if servers.get("semble") == want:
+    print(f"  semble already registered in {p}")
+else:
+    verb = "updated" if "semble" in servers else "added"
+    servers["semble"] = want
+    json.dump(d, open(p, "w"), indent=2)
+    open(p, "a").write("\n")
+    print(f"  {verb} semble in {p} ({len(servers)} servers total, others untouched)")
+PYEOF
+}
+
+say "MCP servers for agents without a plugin route"
+merge_mcp "$HOME/.kimi-code/mcp.json"
+
 # ------------------------------------------------------------------ AGENTS.md
 # Aider, OpenClaw, Factory Droid, Trae and Codex do not load a skill folder — they read
 # a markdown section. One writer covers all of them. The block is marker-delimited, so
